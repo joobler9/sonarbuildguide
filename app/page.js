@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/useAuth";
 import CreaturesBrowser from "@/components/CreaturesBrowser";
 import PlushiesTab from "@/components/PlushiesTab";
+import TraitsTab from "@/components/TraitsTab";
 
 export default function HomePage() {
   const { user, profile, loading, supabase } = useAuth();
@@ -46,12 +47,16 @@ export default function HomePage() {
         <button className={`tab-btn tab-cyan ${tab === "builds" ? "active" : ""}`} onClick={() => setTab("builds")}>
           Builds
         </button>
+        <button className={`tab-btn tab-cyan ${tab === "traits" ? "active" : ""}`} onClick={() => setTab("traits")}>
+          Traits
+        </button>
         <button className={`tab-btn tab-gold ${tab === "plushies" ? "active" : ""}`} onClick={() => setTab("plushies")}>
           Plushies
         </button>
       </div>
 
       {tab === "builds" && <CreaturesBrowser />}
+      {tab === "traits" && <TraitsTab />}
       {tab === "plushies" && <PlushiesTab />}
 
       <div className="footer-note">

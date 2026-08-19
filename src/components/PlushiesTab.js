@@ -9,13 +9,20 @@ export default function PlushiesTab() {
   const { isModerator, supabase } = useAuth();
   const [plushies, setPlushies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
 
   async function loadPlushies() {
     setLoading(true);
-    const { data } = await supabase.from("plushies").select("*").order("name");
-    setPlushies(data || []);
+    setError(null);
+    const { data, error: fetchError } = await supabase.from("plushies").select("*").order("name");
+    if (fetchError) {
+      setError(fetchError.message);
+      setPlushies([]);
+    } else {
+      setPlushies(data || []);
+    }
     setLoading(false);
   }
 
@@ -45,6 +52,16 @@ export default function PlushiesTab() {
 
       {loading ? (
         <div className="notes-text">Loading plushies…</div>
+      ) : error ? (
+        <div className="mod-form" style={{ borderColor: "var(--trait-red)" }}>
+          <div className="mod-form-label" style={{ color: "var(--trait-red)" }}>Couldn't load plushies</div>
+          <div className="error-text">{error}</div>
+        </div>
+      ) : plushies.length === 0 ? (
+        <div className="notes-text">
+          No plushies found in the database yet. Run <code>npm run seed:plushies</code> against this Supabase
+          project if you haven't already.
+        </div>
       ) : filtered.length === 0 ? (
         <div className="notes-text">No plushies match that search.</div>
       ) : (
