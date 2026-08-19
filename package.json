@@ -1,0 +1,21 @@
+{
+  "name": "sonaria-build-guide",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed:plushies": "node scripts/seed-plushies.js",
+    "seed:creatures": "node scripts/seed-creatures.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.5.0",
+    "dotenv": "^16.4.5",
+    "lucide-react": "^0.383.0",
+    "next": "14.2.5",
+    "react": "^18",
+    "react-dom": "^18"
+  }
+}
