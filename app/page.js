@@ -16,43 +16,47 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 style={{ margin: 0 }}>Sonaria Build Guide</h1>
-        <div>
+    <div className="page-wrap">
+      <header className="site-header">
+        <div className="site-title-row">
+          <div className="logo-orb">JB</div>
+          <div>
+            <h1 className="site-title">Joobs Build Guides</h1>
+            <p className="site-subtitle">Unofficial fan tool for builds, traits, and plushies.</p>
+          </div>
+        </div>
+        <div className="identity-row">
           {loading ? null : user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <>
               <span>
                 {profile?.username}
                 {profile?.role && profile.role !== "user" && (
-                  <span style={{ marginLeft: 6, fontSize: 10, color: "#F2C94C", textTransform: "uppercase" }}>
-                    {profile.role}
-                  </span>
+                  <span className="role-badge" style={{ marginLeft: 8 }}>{profile.role}</span>
                 )}
               </span>
-              <button onClick={handleLogout}>Log out</button>
-            </div>
+              <button className="btn-ghost" onClick={handleLogout}>Log out</button>
+            </>
           ) : (
-            <Link href="/login">Sign In</Link>
+            <Link href="/login" className="btn-primary" style={{ textDecoration: "none" }}>Sign In</Link>
           )}
         </div>
       </header>
 
-      <nav style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        <button onClick={() => setTab("builds")} style={{ fontWeight: tab === "builds" ? 700 : 400 }}>
+      <div className="tab-row">
+        <button className={`tab-btn tab-cyan ${tab === "builds" ? "active" : ""}`} onClick={() => setTab("builds")}>
           Builds
         </button>
-        <button onClick={() => setTab("plushies")} style={{ fontWeight: tab === "plushies" ? 700 : 400 }}>
+        <button className={`tab-btn tab-gold ${tab === "plushies" ? "active" : ""}`} onClick={() => setTab("plushies")}>
           Plushies
         </button>
-      </nav>
+      </div>
 
       {tab === "builds" && <CreaturesBrowser />}
       {tab === "plushies" && <PlushiesTab />}
 
-      <footer style={{ marginTop: 40, fontSize: 12, color: "#888" }}>
+      <div className="footer-note">
         Fan-made project, not affiliated with Creatures of Sonaria's developers.
-      </footer>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
+import "./globals.css";
 import { AuthProvider } from "@/lib/useAuth";
 
 export const metadata = {
-  title: "Sonaria Build Guide",
+  title: "Joobs Build Guides",
   description: "Unofficial fan tool for Creatures of Sonaria builds, traits, and plushies.",
 };
 

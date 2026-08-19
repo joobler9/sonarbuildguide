@@ -29,40 +29,35 @@ export default function PlushiesTab() {
   return (
     <div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
-        <input
-          placeholder="Search a plushie…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: 1 }}
-        />
+        <div className="sidebar-search" style={{ flex: 1, marginBottom: 0 }}>
+          <input placeholder="Search a plushie…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </div>
         {isModerator && (
-          <button onClick={() => setShowAddForm((v) => !v)}>
+          <button className="btn-gold" onClick={() => setShowAddForm((v) => !v)}>
             {showAddForm ? "Cancel" : "+ Add Plushie"}
           </button>
         )}
       </div>
 
       {isModerator && showAddForm && (
-        <AddPlushieForm
-          supabase={supabase}
-          onAdded={() => { setShowAddForm(false); loadPlushies(); }}
-        />
+        <AddPlushieForm supabase={supabase} onAdded={() => { setShowAddForm(false); loadPlushies(); }} />
       )}
 
       {loading ? (
-        <div>Loading plushies…</div>
+        <div className="notes-text">Loading plushies…</div>
       ) : filtered.length === 0 ? (
-        <div>No plushies match that search.</div>
+        <div className="notes-text">No plushies match that search.</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+        <div className="grid-cards">
           {filtered.map((p) => (
-            <div key={p.id} style={{ border: "1px solid #333", borderRadius: 10, padding: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <strong>{p.name}</strong>
-                <span style={{ fontSize: 10, textTransform: "uppercase", color: "#888" }}>{p.type}</span>
+            <div key={p.id} className="info-card">
+              <div className="info-card-top">
+                <h3 className="info-name">{p.name}</h3>
+                <span className="tag-pill">{p.type}</span>
               </div>
-              <p style={{ fontSize: 13, color: "#aaa", margin: "6px 0" }}>{p.effect}</p>
-              <div style={{ fontSize: 11, color: "#888" }}>Availability: {p.availability}</div>
+              <p className="notes-text" style={{ marginTop: 0 }}>{p.effect}</p>
+              <div className="section-label" style={{ margin: "8px 0 2px" }}>Availability</div>
+              <div style={{ fontSize: 12.5, color: "var(--ink-dim)" }}>{p.availability}</div>
             </div>
           ))}
         </div>
@@ -71,10 +66,6 @@ export default function PlushiesTab() {
   );
 }
 
-// Only ever rendered when isModerator is true (checked by the parent above),
-// but the real enforcement is the database's row-level security policy —
-// even a moderator-only UI button doesn't matter if the database would
-// reject the insert from a non-moderator account.
 function AddPlushieForm({ supabase, onAdded }) {
   const [name, setName] = useState("");
   const [type, setType] = useState(PLUSHIE_TYPES[0]);
@@ -88,32 +79,28 @@ function AddPlushieForm({ supabase, onAdded }) {
     setSaving(true);
     setError(null);
     const { error: insertError } = await supabase.from("plushies").insert({
-      name: name.trim(),
-      type,
-      effect: effect.trim(),
-      availability: availability.trim(),
+      name: name.trim(), type, effect: effect.trim(), availability: availability.trim(),
     });
     setSaving(false);
-    if (insertError) {
-      setError(insertError.message);
-    } else {
-      onAdded();
-    }
+    if (insertError) setError(insertError.message);
+    else onAdded();
   }
 
   return (
-    <div style={{ border: "1px solid #F2C94C", borderRadius: 10, padding: 14, marginBottom: 16 }}>
-      <div style={{ fontSize: 11, color: "#F2C94C", marginBottom: 8 }}>ADD A NEW PLUSHIE</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div className="mod-form">
+      <div className="mod-form-label">Add a New Plushie</div>
+      <div className="mod-form-grid">
         <input placeholder="Plushie name" value={name} onChange={(e) => setName(e.target.value)} />
         <select value={type} onChange={(e) => setType(e.target.value)}>
           {PLUSHIE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input placeholder="Effect (e.g. +5% damage. Stackable.)" value={effect} onChange={(e) => setEffect(e.target.value)} />
-        <input placeholder="Availability (e.g. Halloween Event)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
-        {error && <div style={{ color: "#ff4545", fontSize: 12 }}>{error}</div>}
-        <button onClick={submit} disabled={saving}>{saving ? "Adding…" : "Add Plushie"}</button>
+        <input className="field-full" placeholder="Effect (e.g. +5% damage. Stackable.)" value={effect} onChange={(e) => setEffect(e.target.value)} />
+        <input className="field-full" placeholder="Availability (e.g. Halloween Event)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
       </div>
+      {error && <div className="error-text">{error}</div>}
+      <button className="btn-gold" style={{ marginTop: 10 }} onClick={submit} disabled={saving}>
+        {saving ? "Adding…" : "Add Plushie"}
+      </button>
     </div>
   );
 }

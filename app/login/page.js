@@ -45,9 +45,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 380, margin: "80px auto", padding: 24 }}>
+    <div className="login-wrap">
       <h1>{mode === "signup" ? "Create an account" : "Sign in"}</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <form onSubmit={handleSubmit} className="login-form">
         {mode === "signup" && (
           <input
             placeholder="Username"
@@ -73,15 +73,12 @@ export default function LoginPage() {
           required
           minLength={6}
         />
-        {error && <div style={{ color: "#ff4545", fontSize: 13 }}>{error}</div>}
-        <button type="submit" disabled={loading}>
+        {error && <div className="error-text">{error}</div>}
+        <button className="btn-primary" type="submit" disabled={loading}>
           {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Sign In"}
         </button>
       </form>
-      <button
-        onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-        style={{ marginTop: 12, background: "none", border: "none", textDecoration: "underline", cursor: "pointer" }}
-      >
+      <button className="login-switch" onClick={() => setMode(mode === "signup" ? "signin" : "signup")}>
         {mode === "signup" ? "Already have an account? Sign in" : "Need an account? Sign up"}
       </button>
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import AddCreatureForm from "./AddCreatureForm";
 import BuildEditor from "./BuildEditor";
+import CommentSection from "./CommentSection";
 
 export default function CreaturesBrowser() {
   const { isModerator, supabase } = useAuth();
@@ -30,31 +31,28 @@ export default function CreaturesBrowser() {
   const filtered = creatures.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()));
   const selected = creatures.find((c) => c.id === selectedId);
 
-  if (loading) return <div>Loading creatures…</div>;
+  if (loading) return <div className="notes-text">Loading creatures…</div>;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 18 }}>
+    <div className="builds-layout">
       <div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <input placeholder="Search…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ flex: 1 }} />
+        <div className="sidebar-search">
+          <input placeholder="Search a creature…" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         {isModerator && (
-          <button onClick={() => setShowAddForm((v) => !v)} style={{ width: "100%", marginBottom: 10 }}>
+          <button className="btn-gold" style={{ width: "100%", marginBottom: 12 }} onClick={() => setShowAddForm((v) => !v)}>
             {showAddForm ? "Cancel" : "+ Add Creature"}
           </button>
         )}
-        <div style={{ maxHeight: 600, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div className="creature-list">
           {filtered.map((c) => (
             <div
               key={c.id}
+              className={`creature-item ${c.id === selectedId ? "active" : ""}`}
               onClick={() => { setSelectedId(c.id); setEditing(false); }}
-              style={{
-                padding: "8px 10px", borderRadius: 8, cursor: "pointer",
-                background: c.id === selectedId ? "#222" : "transparent",
-              }}
             >
-              <div style={{ fontWeight: 600, fontSize: 13 }}>{c.name}</div>
-              <div style={{ fontSize: 11, color: "#888" }}>{c.flavor}</div>
+              <div className="creature-item-name">{c.name}</div>
+              <div className="creature-item-flavor">{c.flavor}</div>
             </div>
           ))}
         </div>
@@ -66,42 +64,51 @@ export default function CreaturesBrowser() {
         )}
 
         {selected ? (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div className="glow-card">
+            <div className="glow-card-header">
               <div>
-                <h2 style={{ margin: 0 }}>{selected.name}</h2>
-                <p style={{ color: "#888", margin: "4px 0" }}>{selected.flavor}</p>
+                <h2 className="creature-name">{selected.name}</h2>
+                <p className="creature-flavor">{selected.flavor}</p>
               </div>
               {isModerator && (
-                <button onClick={() => setEditing((v) => !v)}>{editing ? "Close Editor" : "Edit"}</button>
+                <button className="btn-ghost" onClick={() => setEditing((v) => !v)}>{editing ? "Close Editor" : "Edit"}</button>
               )}
             </div>
+            <div className="glow-card-body">
+              <div className="stat-grid">
+                <Stat label="Health" value={selected.health} />
+                <Stat label="Damage" value={selected.damage} />
+                <Stat label="Weight" value={selected.weight} />
+                <Stat label="Stamina" value={selected.stamina} />
+              </div>
+              <p className="notes-text" style={{ marginTop: 0 }}>{selected.speed_text}</p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, margin: "16px 0" }}>
-              <Stat label="Health" value={selected.health} />
-              <Stat label="Damage" value={selected.damage} />
-              <Stat label="Weight" value={selected.weight} />
-              <Stat label="Stamina" value={selected.stamina} />
-            </div>
-            <p style={{ fontSize: 12, color: "#888" }}>{selected.speed_text}</p>
+              <div className="section-label">Best Traits</div>
+              <div className="tag-list">
+                {(selected.best_traits || []).length > 0
+                  ? selected.best_traits.map((t) => <span key={t} className="tag-pill">{t}</span>)
+                  : <span className="notes-text">None listed</span>}
+              </div>
 
-            <div style={{ marginTop: 12 }}>
-              <strong>Best Traits:</strong> {(selected.best_traits || []).join(", ") || "—"}
-            </div>
-            <div style={{ marginTop: 6 }}>
-              <strong>Recommended Plushies:</strong> {(selected.recommended_plushies || []).join(", ") || "—"}
-            </div>
-            {selected.notes && <p style={{ marginTop: 12, color: "#aaa" }}>{selected.notes}</p>}
+              <div className="section-label">Recommended Plushies</div>
+              <div className="tag-list">
+                {(selected.recommended_plushies || []).length > 0
+                  ? selected.recommended_plushies.map((p) => <span key={p} className="tag-pill">{p}</span>)
+                  : <span className="notes-text">None listed</span>}
+              </div>
 
-            {editing && (
-              <BuildEditor
-                creature={selected}
-                onSaved={() => { setEditing(false); loadCreatures(); }}
-              />
-            )}
+              {selected.notes && <p className="notes-text">{selected.notes}</p>}
+
+              {editing && (
+                <BuildEditor creature={selected} onSaved={() => { setEditing(false); loadCreatures(); }} />
+              )}
+
+              <div className="section-label">Comments</div>
+              <CommentSection creatureId={selected.id} />
+            </div>
           </div>
         ) : (
-          <div>No creature selected.</div>
+          <div className="notes-text">No creature selected.</div>
         )}
       </div>
     </div>
@@ -110,9 +117,9 @@ export default function CreaturesBrowser() {
 
 function Stat({ label, value }) {
   return (
-    <div style={{ border: "1px solid #333", borderRadius: 8, padding: 8, textAlign: "center" }}>
-      <div style={{ fontSize: 10, color: "#888", textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 700 }}>{value}</div>
+    <div className="stat-box">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
     </div>
   );
 }

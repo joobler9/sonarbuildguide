@@ -38,46 +38,39 @@ export default function CommentSection({ creatureId }) {
     }
   }
 
-  // A comment can be deleted by its own author, OR by any moderator/admin.
-  // The database's row-level security policy enforces this same rule
-  // server-side too, so this isn't just a UI-level restriction.
   async function deleteComment(id) {
     const { error } = await supabase.from("comments").delete().eq("id", id);
     if (!error) setComments((prev) => prev.filter((c) => c.id !== id));
   }
 
-  if (loading) return <div>Loading comments…</div>;
+  if (loading) return <div className="notes-text">Loading comments…</div>;
 
   return (
     <div>
-      <h3>Comments ({comments.length})</h3>
+      {comments.length === 0 && <div className="notes-text" style={{ marginTop: 0 }}>No comments yet.</div>}
       {comments.map((c) => {
         const canDelete = user && (c.user_id === user.id || isModerator);
         return (
-          <div key={c.id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: "1px solid #222" }}>
+          <div key={c.id} className="comment-item">
             <div style={{ flex: 1 }}>
-              <strong>{c.profiles?.username || "Unknown"}</strong>
-              {isModerator && c.user_id !== user?.id && (
-                <span style={{ fontSize: 10, color: "#F2C94C", marginLeft: 6 }}>MOD VIEW</span>
-              )}
-              <p style={{ margin: "2px 0 0" }}>{c.text}</p>
+              <span className="comment-user">{c.profiles?.username || "Unknown"}</span>
+              {isModerator && c.user_id !== user?.id && <span className="mod-view-tag">MOD VIEW</span>}
+              <p className="comment-text">{c.text}</p>
             </div>
             {canDelete && (
-              <button onClick={() => deleteComment(c.id)} title={c.user_id === user?.id ? "Delete your comment" : "Delete as moderator"}>
-                Delete
-              </button>
+              <button className="btn-ghost" onClick={() => deleteComment(c.id)}>Delete</button>
             )}
           </div>
         );
       })}
 
       {user ? (
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Add a comment…" style={{ flex: 1 }} />
-          <button onClick={postComment} disabled={!draft.trim()}>Post</button>
+        <div className="comment-form-row">
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Add a comment…" />
+          <button className="btn-primary" onClick={postComment} disabled={!draft.trim()}>Post</button>
         </div>
       ) : (
-        <p style={{ color: "#888" }}>Log in to comment.</p>
+        <p className="notes-text">Log in to comment.</p>
       )}
     </div>
   );

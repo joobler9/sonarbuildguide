@@ -8,27 +8,11 @@ const ELDER_TYPES = ["Powerful", "Gentle", "Devious"];
 const TIERS = ["1", "2", "3", "4", "5"];
 
 const BLANK_FORM = {
-  name: "",
-  flavor: "",
-  category: "Land",
-  diet: "",
-  playstyle: "",
-  elder: "Powerful",
-  tier: "3",
-  health: "",
-  damage: "",
-  weight: "",
-  stamina: "",
-  speedText: "",
-  bestTraits: "",
-  recommendedPlushies: "",
-  notes: "",
+  name: "", flavor: "", category: "Land", diet: "", playstyle: "", elder: "Powerful", tier: "3",
+  health: "", damage: "", weight: "", stamina: "", speedText: "",
+  bestTraits: "", recommendedPlushies: "", notes: "",
 };
 
-// Only ever rendered when isModerator is true (checked by the parent), but
-// the real enforcement is the database's row-level security policy — even
-// a moderator-only UI button doesn't matter if the database would reject
-// the insert from a non-moderator account.
 export default function AddCreatureForm({ onAdded, onCancel }) {
   const { isModerator, supabase } = useAuth();
   const [form, setForm] = useState(BLANK_FORM);
@@ -75,9 +59,9 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
   }
 
   return (
-    <div style={{ border: "1px solid #F2C94C", borderRadius: 10, padding: 16, marginBottom: 16 }}>
-      <div style={{ fontSize: 11, color: "#F2C94C", marginBottom: 10 }}>ADD A NEW CREATURE</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+    <div className="mod-form">
+      <div className="mod-form-label">Add a New Creature</div>
+      <div className="mod-form-grid">
         <input placeholder="Name" value={form.name} onChange={(e) => set("name", e.target.value)} />
         <input placeholder="Flavor text (e.g. Tier 5 · Huge land predator)" value={form.flavor} onChange={(e) => set("flavor", e.target.value)} />
 
@@ -101,14 +85,14 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
         <input type="number" placeholder="Weight" value={form.weight} onChange={(e) => set("weight", e.target.value)} />
         <input type="number" placeholder="Stamina" value={form.stamina} onChange={(e) => set("stamina", e.target.value)} />
 
-        <input placeholder="Best traits (comma separated)" value={form.bestTraits} onChange={(e) => set("bestTraits", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-        <input placeholder="Recommended plushies (comma separated)" value={form.recommendedPlushies} onChange={(e) => set("recommendedPlushies", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-        <textarea placeholder="Notes / build reasoning" value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} style={{ gridColumn: "1 / -1" }} />
+        <input className="field-full" placeholder="Best traits (comma separated)" value={form.bestTraits} onChange={(e) => set("bestTraits", e.target.value)} />
+        <input className="field-full" placeholder="Recommended plushies (comma separated)" value={form.recommendedPlushies} onChange={(e) => set("recommendedPlushies", e.target.value)} />
+        <textarea className="field-full" placeholder="Notes / build reasoning" value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} />
       </div>
-      {error && <div style={{ color: "#ff4545", fontSize: 12, marginTop: 8 }}>{error}</div>}
+      {error && <div className="error-text">{error}</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <button onClick={submit} disabled={saving}>{saving ? "Adding…" : "Add Creature"}</button>
-        {onCancel && <button onClick={onCancel}>Cancel</button>}
+        <button className="btn-gold" onClick={submit} disabled={saving}>{saving ? "Adding…" : "Add Creature"}</button>
+        {onCancel && <button className="btn-ghost" onClick={onCancel}>Cancel</button>}
       </div>
     </div>
   );
