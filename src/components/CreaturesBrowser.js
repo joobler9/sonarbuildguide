@@ -158,8 +158,8 @@ export default function CreaturesBrowser() {
               <div className="section-label">Best Traits</div>
               <div className="build-list">
                 {(selected.best_traits || []).length > 0
-                  ? selected.best_traits.map((t) => (
-                      <div key={t} className="build-slot">
+                  ? selected.best_traits.map((t, i) => (
+                      <div key={`${selected.id}-trait-${i}-${t}`} className="build-slot">
                         <img src={TRAIT_ICON[TRAIT_CATEGORY[t]]} alt="" className="trait-icon" />
                         {t}
                       </div>
@@ -170,8 +170,8 @@ export default function CreaturesBrowser() {
               <div className="section-label">Recommended Plushies</div>
               <div className="build-list">
                 {(selected.recommended_plushies || []).length > 0
-                  ? selected.recommended_plushies.map((p) => (
-                      <div key={p} className="build-slot">
+                  ? selected.recommended_plushies.map((p, i) => (
+                      <div key={`${selected.id}-plushie-${i}-${p}`} className="build-slot">
                         <span className="build-slot-dot" style={{ background: "var(--gold)" }} />
                         {p}
                       </div>
