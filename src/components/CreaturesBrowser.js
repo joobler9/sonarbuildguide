@@ -179,8 +179,6 @@ export default function CreaturesBrowser() {
                   : <div className="notes-text">None listed</div>}
               </div>
 
-              {selected.notes && <p className="notes-text">{selected.notes}</p>}
-
               {editing && (
                 <BuildEditor key={selected.id} creature={selected} onSaved={() => { setEditing(false); loadCreatures(); }} />
               )}

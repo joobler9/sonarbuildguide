@@ -40,7 +40,7 @@ export default function TraitsTab() {
       </div>
       <div className="footer-note" style={{ marginTop: 20 }}>
         Each creature can gain up to two traits total, one at age 66 and one at age 100. Nested creatures have a 100%
-        chance of getting both. Once a creature has two, that's permanent for its lifetime.
+        chance of getting both.
       </div>
     </div>
   );
