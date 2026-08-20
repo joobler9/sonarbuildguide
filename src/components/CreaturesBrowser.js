@@ -182,7 +182,7 @@ export default function CreaturesBrowser() {
               {selected.notes && <p className="notes-text">{selected.notes}</p>}
 
               {editing && (
-                <BuildEditor creature={selected} onSaved={() => { setEditing(false); loadCreatures(); }} />
+                <BuildEditor key={selected.id} creature={selected} onSaved={() => { setEditing(false); loadCreatures(); }} />
               )}
 
               <div className="section-label">Comments</div>

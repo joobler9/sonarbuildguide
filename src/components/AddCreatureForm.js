@@ -1,28 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 
 const CATEGORIES = ["Land", "Sea", "Sky"];
 const ELDER_TYPES = ["Powerful", "Gentle", "Devious"];
 const TIERS = ["1", "2", "3", "4", "5"];
+const TRAIT_NAMES = ["Bite", "Damage", "Weight", "Health", "Stamina Regen", "Healing", "Speed", "Max Stamina"];
 
 const BLANK_FORM = {
   name: "", flavor: "", category: "Land", diet: "", playstyle: "", elder: "Powerful", tier: "3",
-  health: "", damage: "", weight: "", stamina: "", speedText: "",
-  bestTraits: "", recommendedPlushies: "", notes: "",
+  health: "", damage: "", weight: "", stamina: "", speedText: "", notes: "",
 };
 
 export default function AddCreatureForm({ onAdded, onCancel }) {
   const { isModerator, supabase } = useAuth();
   const [form, setForm] = useState(BLANK_FORM);
+  const [bestTraits, setBestTraits] = useState([]);
+  const [selectedPlushies, setSelectedPlushies] = useState([]);
+  const [plushiesList, setPlushiesList] = useState([]);
+  const [plushieSearch, setPlushieSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    supabase.from("plushies").select("name").order("name").then(({ data }) => {
+      setPlushiesList((data || []).map((p) => p.name));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!isModerator) return null;
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function toggleTrait(name) {
+    setBestTraits((prev) => (prev.includes(name) ? prev.filter((t) => t !== name) : prev.length >= 2 ? prev : [...prev, name]));
+  }
+
+  function togglePlushie(name) {
+    setSelectedPlushies((prev) => (prev.includes(name) ? prev.filter((p) => p !== name) : prev.length >= 2 ? prev : [...prev, name]));
   }
 
   async function submit() {
@@ -45,8 +64,8 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
       weight: Number(form.weight) || 0,
       stamina: Number(form.stamina) || 0,
       speed_text: form.speedText.trim(),
-      best_traits: form.bestTraits.split(",").map((t) => t.trim()).filter(Boolean),
-      recommended_plushies: form.recommendedPlushies.split(",").map((p) => p.trim()).filter(Boolean),
+      best_traits: bestTraits,
+      recommended_plushies: selectedPlushies,
       notes: form.notes.trim(),
     });
     setSaving(false);
@@ -54,9 +73,13 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
       setError(insertError.message);
     } else {
       setForm(BLANK_FORM);
+      setBestTraits([]);
+      setSelectedPlushies([]);
       if (onAdded) onAdded();
     }
   }
+
+  const filteredPlushies = plushiesList.filter((p) => p.toLowerCase().includes(plushieSearch.toLowerCase()));
 
   return (
     <div className="mod-form">
@@ -85,10 +108,54 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
         <input type="number" placeholder="Weight" value={form.weight} onChange={(e) => set("weight", e.target.value)} />
         <input type="number" placeholder="Stamina" value={form.stamina} onChange={(e) => set("stamina", e.target.value)} />
 
-        <input className="field-full" placeholder="Best traits (comma separated)" value={form.bestTraits} onChange={(e) => set("bestTraits", e.target.value)} />
-        <input className="field-full" placeholder="Recommended plushies (comma separated)" value={form.recommendedPlushies} onChange={(e) => set("recommendedPlushies", e.target.value)} />
         <textarea className="field-full" placeholder="Notes / build reasoning" value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} />
       </div>
+
+      <div className="picker-section-label">Best Traits ({bestTraits.length}/2)</div>
+      <div className="chip-picker">
+        {TRAIT_NAMES.map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={`chip-toggle ${bestTraits.includes(t) ? "active" : ""}`}
+            onClick={() => toggleTrait(t)}
+            disabled={!bestTraits.includes(t) && bestTraits.length >= 2}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="picker-section-label">Recommended Plushies ({selectedPlushies.length}/2)</div>
+      {selectedPlushies.length > 0 && (
+        <div className="chip-picker" style={{ marginBottom: 8 }}>
+          {selectedPlushies.map((p) => (
+            <button key={p} type="button" className="chip-toggle active" onClick={() => togglePlushie(p)}>
+              {p} ✕
+            </button>
+          ))}
+        </div>
+      )}
+      <input
+        placeholder="Search plushies to add…"
+        value={plushieSearch}
+        onChange={(e) => setPlushieSearch(e.target.value)}
+        style={{ marginBottom: 6, width: "100%" }}
+      />
+      <div className="chip-picker-scroll">
+        {filteredPlushies.filter((p) => !selectedPlushies.includes(p)).map((p) => (
+          <button
+            key={p}
+            type="button"
+            className="chip-toggle"
+            onClick={() => togglePlushie(p)}
+            disabled={selectedPlushies.length >= 2}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+
       {error && <div className="error-text">{error}</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button className="btn-gold" onClick={submit} disabled={saving}>{saving ? "Adding…" : "Add Creature"}</button>
