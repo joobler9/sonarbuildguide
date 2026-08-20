@@ -142,25 +142,35 @@ export default function CreaturesBrowser() {
             </div>
             <div className="glow-card-body">
               <div className="stat-grid">
-                <Stat label="Health" value={selected.health} max={17500} />
-                <Stat label="Damage" value={selected.damage} max={680} />
-                <Stat label="Weight" value={selected.weight} max={50000} />
-                <Stat label="Stamina" value={selected.stamina} max={230} />
+                <StatRow label="Health" value={selected.health} statKey="health" glow={CATEGORY_GLOW[selected.category] || "var(--cyan)"} />
+                <StatRow label="Damage" value={selected.damage} statKey="damage" glow={CATEGORY_GLOW[selected.category] || "var(--cyan)"} />
+                <StatRow label="Weight" value={selected.weight} statKey="weight" glow={CATEGORY_GLOW[selected.category] || "var(--cyan)"} />
+                <StatRow label="Stamina" value={selected.stamina} statKey="stamina" glow={CATEGORY_GLOW[selected.category] || "var(--cyan)"} />
               </div>
               <p className="notes-text" style={{ marginTop: 0 }}>{selected.speed_text}</p>
 
               <div className="section-label">Best Traits</div>
-              <div className="tag-list">
+              <div className="build-list">
                 {(selected.best_traits || []).length > 0
-                  ? selected.best_traits.map((t) => <span key={t} className="tag-pill">{t}</span>)
-                  : <span className="notes-text">None listed</span>}
+                  ? selected.best_traits.map((t) => (
+                      <div key={t} className="build-slot">
+                        <span className="build-slot-dot" style={{ background: TRAIT_COLOR[TRAIT_CATEGORY[t]] || "var(--ink-dim)" }} />
+                        {t}
+                      </div>
+                    ))
+                  : <div className="notes-text">None listed</div>}
               </div>
 
               <div className="section-label">Recommended Plushies</div>
-              <div className="tag-list">
+              <div className="build-list">
                 {(selected.recommended_plushies || []).length > 0
-                  ? selected.recommended_plushies.map((p) => <span key={p} className="tag-pill">{p}</span>)
-                  : <span className="notes-text">None listed</span>}
+                  ? selected.recommended_plushies.map((p) => (
+                      <div key={p} className="build-slot">
+                        <span className="build-slot-dot" style={{ background: "var(--gold)" }} />
+                        {p}
+                      </div>
+                    ))
+                  : <div className="notes-text">None listed</div>}
               </div>
 
               {selected.notes && <p className="notes-text">{selected.notes}</p>}
@@ -181,15 +191,27 @@ export default function CreaturesBrowser() {
   );
 }
 
-function Stat({ label, value, max }) {
-  const pct = Math.min(100, Math.round((value / max) * 100));
+const STAT_MAX = { health: 17500, damage: 680, weight: 50000, stamina: 230 };
+const CATEGORY_GLOW = { Land: "var(--orange)", Sea: "var(--cyan)", Sky: "var(--purple)" };
+const TRAIT_CATEGORY = { Bite: "Combat", Damage: "Combat", Weight: "Combat", Health: "Recovery", "Stamina Regen": "Recovery", Healing: "Recovery", Speed: "Mobility", "Max Stamina": "Mobility" };
+const TRAIT_COLOR = { Combat: "var(--trait-red)", Recovery: "var(--trait-green)", Mobility: "var(--trait-blue)" };
+
+function StatRow({ label, value, statKey, glow }) {
+  const ticks = 20;
+  const filled = Math.max(1, Math.round((value / STAT_MAX[statKey]) * ticks));
   return (
-    <div className="stat-box">
+    <div className="stat-row">
       <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-bar-track">
-        <div className="stat-bar-fill" style={{ width: `${pct}%` }} />
+      <div className="stat-ticks">
+        {Array.from({ length: ticks }).map((_, i) => (
+          <span
+            key={i}
+            className="tick"
+            style={i < filled ? { background: glow, boxShadow: `0 0 6px ${glow}` } : undefined}
+          />
+        ))}
       </div>
+      <div className="stat-value">{value}</div>
     </div>
   );
 }

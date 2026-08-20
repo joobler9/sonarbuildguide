@@ -19,6 +19,7 @@ export default function HomePage() {
   return (
     <div className="page-wrap">
       <header className="site-header">
+        <div className="header-spacer" />
         <div className="site-title-row">
           <div className="logo-orb">JB</div>
           <div>
@@ -61,6 +62,15 @@ export default function HomePage() {
 
       <div className="footer-note">
         Fan-made project, not affiliated with Creatures of Sonaria's developers.
+      </div>
+      <div className="legal-links-row">
+        <Link href="/legal/disclaimer">Disclaimer</Link>
+        <span>·</span>
+        <Link href="/legal/privacy">Privacy Policy</Link>
+        <span>·</span>
+        <Link href="/legal/terms">Terms of Service</Link>
+        <span>·</span>
+        <Link href="/legal/guidelines">Community Guidelines</Link>
       </div>
     </div>
   );

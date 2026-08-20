@@ -10,6 +10,7 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
   role text not null default 'user' check (role in ('user', 'moderator', 'admin')),
+  last_comment_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -186,6 +187,15 @@ create policy "Follows are viewable by everyone"
 create policy "Users can manage their own follows"
   on follows for all
   using (auth.uid() = follower_id);
+
+
+-- ============================================================================
+-- MIGRATION for existing databases: if you already ran this schema before,
+-- run just this one line to add the new comment-cooldown column without
+-- needing to redo anything else. Safe to run even if the column already
+-- exists.
+alter table profiles add column if not exists last_comment_at timestamptz;
+-- ============================================================================
 
 
 -- ============================================================================

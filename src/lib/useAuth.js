@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("id, username, role")
+          .select("id, username, role, last_comment_at")
           .eq("id", session.user.id)
           .single();
         if (!cancelled) setProfile(profileData);
@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("id, username, role")
+          .select("id, username, role, last_comment_at")
           .eq("id", session.user.id)
           .single();
         setProfile(profileData);
