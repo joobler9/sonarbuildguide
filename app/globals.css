@@ -166,6 +166,7 @@ input:focus, select:focus, textarea:focus {
 .build-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
 .build-slot { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; }
 .build-slot-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.trait-icon { width: 18px; height: 18px; flex-shrink: 0; object-fit: contain; }
 
 .glow-card { background: var(--panel); border: 2px solid var(--cyan); border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px color-mix(in srgb, var(--cyan) 40%, transparent), 0 0 55px color-mix(in srgb, var(--cyan) 30%, transparent); }
 .glow-card-header { background: var(--panel-2); padding: 22px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
@@ -218,7 +219,9 @@ input:focus, select:focus, textarea:focus {
 .legal-links-row a { color: var(--ink-dim); font-size: 11px; text-decoration: underline; }
 .legal-links-row a:hover { color: var(--ink); }
 
-.legal-page-card { background: var(--panel); border: 1.5px solid var(--gold); border-radius: 16px; padding: 28px; box-shadow: 0 0 30px color-mix(in srgb, var(--gold) 15%, transparent); }
+.legal-page-card { position: relative; background: var(--panel); border: 1.5px solid var(--gold); border-radius: 16px; padding: 28px; box-shadow: 0 0 30px color-mix(in srgb, var(--gold) 15%, transparent); }
+.legal-close-btn { position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid var(--line); color: var(--ink-dim); text-decoration: none; font-size: 14px; }
+.legal-close-btn:hover { color: var(--ink); border-color: var(--trait-red); }
 .legal-section { border-left: 2px solid color-mix(in srgb, var(--gold) 35%, transparent); padding-left: 12px; margin-bottom: 18px; }
 .legal-heading { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--gold); margin-bottom: 6px; }
 .legal-text { font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; margin: 0; }
