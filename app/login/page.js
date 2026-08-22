@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
@@ -46,6 +47,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
+      <Link href="/" className="legal-close-btn" aria-label="Back">✕</Link>
       <h1>{mode === "signup" ? "Create an account" : "Sign in"}</h1>
       <form onSubmit={handleSubmit} className="login-form">
         {mode === "signup" && (
