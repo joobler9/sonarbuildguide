@@ -10,7 +10,7 @@ const TRAITS = [
   { name: "Bite", category: "Combat", effect: "+10% faster bite cooldown, letting you attack more often." },
   { name: "Damage", category: "Combat", effect: "+5% attack damage." },
   { name: "Weight", category: "Combat", effect: "+5% weight." },
-  { name: "Health", category: "Recovery", effect: "+12.5% health regeneration rate, not max health." },
+  { name: "Health", category: "Recovery", effect: "+12.5% health regeneration rate." },
   { name: "Stamina Regen", category: "Recovery", effect: "+20% stamina regeneration, including in-glide stamina regeneration." },
   { name: "Healing", category: "Recovery", effect: "+5% healing done to other creatures via Heal Breath or Heal Beam." },
   { name: "Speed", category: "Mobility", effect: "+3.5% to walk, sprint, swim, and fly speed." },
