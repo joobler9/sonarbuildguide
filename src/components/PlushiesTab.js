@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/useAuth";
+import { createClient } from "@/lib/supabase-browser";
+import { useOwnerMode } from "@/lib/ownerMode";
 
 const PLUSHIE_TYPES = ["Boost", "Ailments", "Ability Grant", "Mutation Chance"];
 
 export default function PlushiesTab() {
-  const { isModerator, supabase } = useAuth();
+  const { isOwner, passcode } = useOwnerMode();
+  const supabase = createClient();
   const [plushies, setPlushies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,15 +41,15 @@ export default function PlushiesTab() {
         <div className="sidebar-search" style={{ flex: 1, marginBottom: 0 }}>
           <input placeholder="Search a plushie…" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        {isModerator && (
+        {isOwner && (
           <button className="btn-gold" onClick={() => setShowAddForm((v) => !v)}>
             {showAddForm ? "Cancel" : "+ Add Plushie"}
           </button>
         )}
       </div>
 
-      {isModerator && showAddForm && (
-        <AddPlushieForm supabase={supabase} onAdded={() => { setShowAddForm(false); loadPlushies(); }} />
+      {isOwner && showAddForm && (
+        <AddPlushieForm passcode={passcode} onAdded={() => { setShowAddForm(false); loadPlushies(); }} />
       )}
 
       {loading ? (
@@ -83,7 +85,7 @@ export default function PlushiesTab() {
   );
 }
 
-function AddPlushieForm({ supabase, onAdded }) {
+function AddPlushieForm({ passcode, onAdded }) {
   const [name, setName] = useState("");
   const [type, setType] = useState(PLUSHIE_TYPES[0]);
   const [effect, setEffect] = useState("");
@@ -95,12 +97,18 @@ function AddPlushieForm({ supabase, onAdded }) {
     if (!name.trim() || !effect.trim() || !availability.trim()) return;
     setSaving(true);
     setError(null);
-    const { error: insertError } = await supabase.from("plushies").insert({
-      name: name.trim(), type, effect: effect.trim(), availability: availability.trim(),
+    const res = await fetch("/api/plushies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode, name: name.trim(), type, effect: effect.trim(), availability: availability.trim() }),
     });
     setSaving(false);
-    if (insertError) setError(insertError.message);
-    else onAdded();
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error || "Failed to add plushie.");
+    } else {
+      onAdded();
+    }
   }
 
   return (

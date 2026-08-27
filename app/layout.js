@@ -1,5 +1,5 @@
 import "./globals.css";
-import { AuthProvider } from "@/lib/useAuth";
+import { OwnerModeProvider } from "@/lib/ownerMode";
 
 // Forces every page on the site to render fresh on every single request,
 // never as a static prebuilt shell. Static pages get served straight from
@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body style={{ margin: 0, background: "#0A0B10", color: "#F5F5F7", fontFamily: "sans-serif" }}>
-        <AuthProvider>{children}</AuthProvider>
+        <OwnerModeProvider>{children}</OwnerModeProvider>
       </body>
     </html>
   );

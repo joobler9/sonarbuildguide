@@ -7,7 +7,8 @@ const TRAIT_ICON = {
 };
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/useAuth";
+import { createClient } from "@/lib/supabase-browser";
+import { useOwnerMode } from "@/lib/ownerMode";
 import AddCreatureForm from "./AddCreatureForm";
 import BuildEditor from "./BuildEditor";
 import CommentSection from "./CommentSection";
@@ -16,7 +17,8 @@ const CATEGORIES = ["All", "Land", "Sea", "Sky"];
 const TIERS = ["All", "1", "2", "3", "4", "5"];
 
 export default function CreaturesBrowser() {
-  const { isModerator, supabase } = useAuth();
+  const { isOwner } = useOwnerMode();
+  const supabase = createClient();
   const [creatures, setCreatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,7 +106,7 @@ export default function CreaturesBrowser() {
             </button>
           ))}
         </div>
-        {isModerator && (
+        {isOwner && (
           <button className="btn-gold" style={{ width: "100%", marginBottom: 12 }} onClick={() => setShowAddForm((v) => !v)}>
             {showAddForm ? "Cancel" : "+ Add Creature"}
           </button>
@@ -125,7 +127,7 @@ export default function CreaturesBrowser() {
       </div>
 
       <div>
-        {showAddForm && isModerator && (
+        {showAddForm && isOwner && (
           <AddCreatureForm onAdded={() => { setShowAddForm(false); loadCreatures(); }} onCancel={() => setShowAddForm(false)} />
         )}
 
@@ -142,7 +144,7 @@ export default function CreaturesBrowser() {
                   <span className="tag-pill" style={{ marginTop: 6, display: "inline-block" }}>{selected.elder} Elder</span>
                 </div>
               </div>
-              {isModerator && (
+              {isOwner && (
                 <button className="btn-ghost" onClick={() => setEditing((v) => !v)}>{editing ? "Close Editor" : "Edit"}</button>
               )}
             </div>

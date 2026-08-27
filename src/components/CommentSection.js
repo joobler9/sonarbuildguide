@@ -1,15 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useAuth } from "@/lib/useAuth";
+import { createClient } from "@/lib/supabase-browser";
+import { useOwnerMode } from "@/lib/ownerMode";
 
 const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
+// Generates (once) and remembers a random id for this browser, used only
+// to track which comments THIS browser has upvoted, so the same person
+// can't upvote a comment twice. Not a real identity, just a local marker.
+function getBrowserId() {
+  let id = window.localStorage.getItem("browserId");
+  if (!id) {
+    id = crypto.randomUUID();
+    window.localStorage.setItem("browserId", id);
+  }
+  return id;
+}
+
 export default function CommentSection({ creatureId }) {
-  const { user, profile, isModerator, supabase } = useAuth();
+  const { isOwner, passcode } = useOwnerMode();
+  const supabase = createClient();
   const [comments, setComments] = useState([]);
   const [draft, setDraft] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState("newest"); // "top" | "newest" | "oldest"
   const [cooldownUntil, setCooldownUntil] = useState(0);
@@ -17,12 +31,19 @@ export default function CommentSection({ creatureId }) {
   const [postError, setPostError] = useState(null);
 
   useEffect(() => {
+    const savedName = window.localStorage.getItem("displayName");
+    if (savedName) setDisplayName(savedName);
+    const savedCooldown = window.localStorage.getItem(`commentCooldown:${creatureId}`);
+    if (savedCooldown) setCooldownUntil(Number(savedCooldown));
+  }, [creatureId]);
+
+  useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       const { data } = await supabase
         .from("comments")
-        .select("id, text, user_id, upvoted_by, created_at, profiles(username)")
+        .select("id, text, username, upvoted_by, created_at")
         .eq("creature_id", creatureId)
         .order("created_at", { ascending: false });
       if (!cancelled) setComments(data || []);
@@ -31,14 +52,6 @@ export default function CommentSection({ creatureId }) {
     load();
     return () => { cancelled = true; };
   }, [creatureId, supabase]);
-
-  // Cooldown comes from the real last_comment_at on the user's own profile,
-  // so it survives page reloads and can't be reset by refreshing.
-  useEffect(() => {
-    if (profile?.last_comment_at) {
-      setCooldownUntil(new Date(profile.last_comment_at).getTime() + COOLDOWN_MS);
-    }
-  }, [profile]);
 
   useEffect(() => {
     if (cooldownUntil <= Date.now()) return;
@@ -50,30 +63,33 @@ export default function CommentSection({ creatureId }) {
   const cooldownMinsLeft = Math.ceil((cooldownUntil - Date.now()) / 60000);
 
   async function postComment() {
-    if (!draft.trim() || !user || cooldownActive) return;
+    if (!draft.trim() || !displayName.trim() || cooldownActive) return;
     setPostError(null);
-    const now = new Date().toISOString();
+    window.localStorage.setItem("displayName", displayName.trim());
+
     const { data, error } = await supabase
       .from("comments")
-      .insert({ creature_id: creatureId, user_id: user.id, text: draft.trim() })
-      .select("id, text, user_id, upvoted_by, created_at, profiles(username)")
+      .insert({ creature_id: creatureId, username: displayName.trim(), text: draft.trim() })
+      .select("id, text, username, upvoted_by, created_at")
       .single();
+
     if (error) {
       setPostError(error.message);
       return;
     }
-    await supabase.from("profiles").update({ last_comment_at: now }).eq("id", user.id);
+    const until = Date.now() + COOLDOWN_MS;
+    window.localStorage.setItem(`commentCooldown:${creatureId}`, String(until));
     setComments((prev) => [data, ...prev]);
-    setCooldownUntil(Date.now() + COOLDOWN_MS);
+    setCooldownUntil(until);
     setDraft("");
   }
 
   async function toggleUpvote(comment) {
-    if (!user) return;
-    const has = (comment.upvoted_by || []).includes(user.id);
+    const browserId = getBrowserId();
+    const has = (comment.upvoted_by || []).includes(browserId);
     const nextUpvotes = has
-      ? comment.upvoted_by.filter((id) => id !== user.id)
-      : [...(comment.upvoted_by || []), user.id];
+      ? comment.upvoted_by.filter((id) => id !== browserId)
+      : [...(comment.upvoted_by || []), browserId];
     const { error } = await supabase.from("comments").update({ upvoted_by: nextUpvotes }).eq("id", comment.id);
     if (!error) {
       setComments((prev) => prev.map((c) => (c.id === comment.id ? { ...c, upvoted_by: nextUpvotes } : c)));
@@ -81,8 +97,12 @@ export default function CommentSection({ creatureId }) {
   }
 
   async function deleteComment(id) {
-    const { error } = await supabase.from("comments").delete().eq("id", id);
-    if (!error) setComments((prev) => prev.filter((c) => c.id !== id));
+    const res = await fetch("/api/comments/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, passcode }),
+    });
+    if (res.ok) setComments((prev) => prev.filter((c) => c.id !== id));
   }
 
   const sorted = [...comments].sort((a, b) => {
@@ -111,45 +131,45 @@ export default function CommentSection({ creatureId }) {
 
       {sorted.length === 0 && <div className="notes-text" style={{ marginTop: 0 }}>No comments yet.</div>}
       {sorted.map((c) => {
-        const canDelete = user && (c.user_id === user.id || isModerator);
-        const upvoted = user && (c.upvoted_by || []).includes(user.id);
+        const browserId = typeof window !== "undefined" ? getBrowserId() : null;
+        const upvoted = browserId && (c.upvoted_by || []).includes(browserId);
         return (
           <div key={c.id} className="comment-item">
-            <button className={`upvote-btn ${upvoted ? "upvoted" : ""}`} onClick={() => toggleUpvote(c)} disabled={!user}>
+            <button className={`upvote-btn ${upvoted ? "upvoted" : ""}`} onClick={() => toggleUpvote(c)}>
               ▲ {(c.upvoted_by || []).length}
             </button>
             <div style={{ flex: 1 }}>
-              <Link href={`/user/${c.profiles?.username}`} className="comment-user">
-                {c.profiles?.username || "Unknown"}
-              </Link>
-              {isModerator && c.user_id !== user?.id && <span className="mod-view-tag">MOD VIEW</span>}
+              <span className="comment-user">{c.username}</span>
               <p className="comment-text">{c.text}</p>
             </div>
-            {canDelete && (
+            {isOwner && (
               <button className="btn-ghost" onClick={() => deleteComment(c.id)}>Delete</button>
             )}
           </div>
         );
       })}
 
-      {user ? (
-        <div style={{ marginTop: 14 }}>
-          <div className="comment-form-row">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder={cooldownActive ? `You can comment again in ${cooldownMinsLeft} min` : "Add a comment…"}
-              disabled={cooldownActive}
-            />
-            <button className="btn-primary" onClick={postComment} disabled={!draft.trim() || cooldownActive}>
-              {cooldownActive ? `Wait ${cooldownMinsLeft}m` : "Post"}
-            </button>
-          </div>
-          {postError && <div className="error-text">{postError}</div>}
+      <div style={{ marginTop: 14 }}>
+        <input
+          placeholder="Your name"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          style={{ marginBottom: 8, width: "100%" }}
+          maxLength={20}
+        />
+        <div className="comment-form-row">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={cooldownActive ? `You can comment again in ${cooldownMinsLeft} min` : "Add a comment…"}
+            disabled={cooldownActive}
+          />
+          <button className="btn-primary" onClick={postComment} disabled={!draft.trim() || !displayName.trim() || cooldownActive}>
+            {cooldownActive ? `Wait ${cooldownMinsLeft}m` : "Post"}
+          </button>
         </div>
-      ) : (
-        <p className="notes-text">Log in to comment.</p>
-      )}
+        {postError && <div className="error-text">{postError}</div>}
+      </div>
     </div>
   );
 }

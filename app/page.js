@@ -1,20 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useAuth } from "@/lib/useAuth";
 import CreaturesBrowser from "@/components/CreaturesBrowser";
 import PlushiesTab from "@/components/PlushiesTab";
 import TraitsTab from "@/components/TraitsTab";
+import OwnerUnlock from "@/components/OwnerUnlock";
+import { useOwnerMode } from "@/lib/ownerMode";
 
 export default function HomePage() {
-  const { user, profile, loading, supabase } = useAuth();
-  const [tab, setTab] = useState("builds"); // "builds" | "plushies"
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.reload();
-  }
+  const { isOwner } = useOwnerMode();
+  const [tab, setTab] = useState("builds"); // "builds" | "traits" | "plushies"
 
   return (
     <div className="page-wrap">
@@ -28,19 +23,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="identity-row">
-          {loading ? null : user ? (
-            <>
-              <span>
-                {profile?.username}
-                {profile?.role && profile.role !== "user" && (
-                  <span className="role-badge" style={{ marginLeft: 8 }}>{profile.role}</span>
-                )}
-              </span>
-              <button className="btn-ghost" onClick={handleLogout}>Log out</button>
-            </>
-          ) : (
-            <Link href="/login" className="btn-primary" style={{ textDecoration: "none" }}>Sign In</Link>
-          )}
+          {isOwner && <span className="role-badge">Owner Mode</span>}
         </div>
       </header>
 
@@ -64,14 +47,16 @@ export default function HomePage() {
         Fan-made project, not affiliated with Creatures of Sonaria's developers.
       </div>
       <div className="legal-links-row">
-        <Link href="/legal/disclaimer">Disclaimer</Link>
+        <a href="/legal/disclaimer">Disclaimer</a>
         <span>·</span>
-        <Link href="/legal/privacy">Privacy Policy</Link>
+        <a href="/legal/privacy">Privacy Policy</a>
         <span>·</span>
-        <Link href="/legal/terms">Terms of Service</Link>
+        <a href="/legal/terms">Terms of Service</a>
         <span>·</span>
-        <Link href="/legal/guidelines">Community Guidelines</Link>
+        <a href="/legal/guidelines">Community Guidelines</a>
       </div>
+
+      <OwnerUnlock />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/useAuth";
+import { createClient } from "@/lib/supabase-browser";
+import { useOwnerMode } from "@/lib/ownerMode";
 
 const CATEGORIES = ["Land", "Sea", "Sky"];
 const ELDER_TYPES = ["Powerful", "Gentle", "Devious"];
@@ -14,7 +15,8 @@ const BLANK_FORM = {
 };
 
 export default function AddCreatureForm({ onAdded, onCancel }) {
-  const { isModerator, supabase } = useAuth();
+  const { isOwner, passcode } = useOwnerMode();
+  const supabase = createClient();
   const [form, setForm] = useState(BLANK_FORM);
   const [bestTraits, setBestTraits] = useState([]);
   const [selectedPlushies, setSelectedPlushies] = useState([]);
@@ -30,7 +32,7 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!isModerator) return null;
+  if (!isOwner) return null;
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -51,26 +53,32 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
     }
     setSaving(true);
     setError(null);
-    const { error: insertError } = await supabase.from("creatures").insert({
-      name: form.name.trim(),
-      flavor: form.flavor.trim(),
-      category: form.category,
-      diet: form.diet.trim(),
-      playstyle: form.playstyle.trim(),
-      elder: form.elder,
-      tier: form.tier,
-      health: Number(form.health) || 0,
-      damage: Number(form.damage) || 0,
-      weight: Number(form.weight) || 0,
-      stamina: Number(form.stamina) || 0,
-      speed_text: form.speedText.trim(),
-      best_traits: bestTraits,
-      recommended_plushies: selectedPlushies,
-      notes: form.notes.trim(),
+    const res = await fetch("/api/creatures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        passcode,
+        name: form.name.trim(),
+        flavor: form.flavor.trim(),
+        category: form.category,
+        diet: form.diet.trim(),
+        playstyle: form.playstyle.trim(),
+        elder: form.elder,
+        tier: form.tier,
+        health: Number(form.health) || 0,
+        damage: Number(form.damage) || 0,
+        weight: Number(form.weight) || 0,
+        stamina: Number(form.stamina) || 0,
+        speedText: form.speedText.trim(),
+        bestTraits,
+        recommendedPlushies: selectedPlushies,
+        notes: form.notes.trim(),
+      }),
     });
     setSaving(false);
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error || "Failed to add creature.");
     } else {
       setForm(BLANK_FORM);
       setBestTraits([]);
