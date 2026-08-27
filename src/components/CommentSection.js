@@ -7,8 +7,8 @@ import { useOwnerMode } from "@/lib/ownerMode";
 const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
 // Generates (once) and remembers a random id for this browser, used only
-// to track which comments THIS browser has upvoted, so the same person
-// can't upvote a comment twice. Not a real identity, just a local marker.
+// to know which comments THIS browser posted, so it can offer a delete
+// button on your own comments. Not a real identity, just a local marker.
 function getBrowserId() {
   let id = window.localStorage.getItem("browserId");
   if (!id) {
@@ -24,8 +24,9 @@ export default function CommentSection({ creatureId }) {
   const [comments, setComments] = useState([]);
   const [draft, setDraft] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [nameInput, setNameInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [sortMode, setSortMode] = useState("newest"); // "top" | "newest" | "oldest"
+  const [sortMode, setSortMode] = useState("newest"); // "newest" | "oldest"
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [tick, setTick] = useState(0);
   const [postError, setPostError] = useState(null);
@@ -43,7 +44,7 @@ export default function CommentSection({ creatureId }) {
       setLoading(true);
       const { data } = await supabase
         .from("comments")
-        .select("id, text, username, upvoted_by, created_at")
+        .select("id, text, username, browser_id, created_at")
         .eq("creature_id", creatureId)
         .order("created_at", { ascending: false });
       if (!cancelled) setComments(data || []);
@@ -62,15 +63,25 @@ export default function CommentSection({ creatureId }) {
   const cooldownActive = Date.now() < cooldownUntil;
   const cooldownMinsLeft = Math.ceil((cooldownUntil - Date.now()) / 60000);
 
+  function saveName() {
+    if (!nameInput.trim()) return;
+    window.localStorage.setItem("displayName", nameInput.trim());
+    setDisplayName(nameInput.trim());
+  }
+
   async function postComment() {
     if (!draft.trim() || !displayName.trim() || cooldownActive) return;
     setPostError(null);
-    window.localStorage.setItem("displayName", displayName.trim());
 
     const { data, error } = await supabase
       .from("comments")
-      .insert({ creature_id: creatureId, username: displayName.trim(), text: draft.trim() })
-      .select("id, text, username, upvoted_by, created_at")
+      .insert({
+        creature_id: creatureId,
+        username: displayName.trim(),
+        text: draft.trim(),
+        browser_id: getBrowserId(),
+      })
+      .select("id, text, username, browser_id, created_at")
       .single();
 
     if (error) {
@@ -84,19 +95,12 @@ export default function CommentSection({ creatureId }) {
     setDraft("");
   }
 
-  async function toggleUpvote(comment) {
-    const browserId = getBrowserId();
-    const has = (comment.upvoted_by || []).includes(browserId);
-    const nextUpvotes = has
-      ? comment.upvoted_by.filter((id) => id !== browserId)
-      : [...(comment.upvoted_by || []), browserId];
-    const { error } = await supabase.from("comments").update({ upvoted_by: nextUpvotes }).eq("id", comment.id);
-    if (!error) {
-      setComments((prev) => prev.map((c) => (c.id === comment.id ? { ...c, upvoted_by: nextUpvotes } : c)));
-    }
+  async function deleteOwnComment(id) {
+    const { error } = await supabase.from("comments").delete().eq("id", id);
+    if (!error) setComments((prev) => prev.filter((c) => c.id !== id));
   }
 
-  async function deleteComment(id) {
+  async function deleteAsOwner(id) {
     const res = await fetch("/api/comments/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,11 +109,9 @@ export default function CommentSection({ creatureId }) {
     if (res.ok) setComments((prev) => prev.filter((c) => c.id !== id));
   }
 
-  const sorted = [...comments].sort((a, b) => {
-    if (sortMode === "top") return (b.upvoted_by || []).length - (a.upvoted_by || []).length;
-    if (sortMode === "oldest") return new Date(a.created_at) - new Date(b.created_at);
-    return new Date(b.created_at) - new Date(a.created_at);
-  });
+  const sorted = [...comments].sort((a, b) =>
+    sortMode === "oldest" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at)
+  );
 
   if (loading) return <div className="notes-text">Loading comments…</div>;
 
@@ -117,7 +119,7 @@ export default function CommentSection({ creatureId }) {
     <div>
       {comments.length > 1 && (
         <div className="sort-row">
-          {[["top", "Top"], ["newest", "Newest"], ["oldest", "Oldest"]].map(([key, label]) => (
+          {[["newest", "Newest"], ["oldest", "Oldest"]].map(([key, label]) => (
             <button
               key={key}
               className={`sort-btn ${sortMode === key ? "active" : ""}`}
@@ -132,39 +134,44 @@ export default function CommentSection({ creatureId }) {
       {sorted.length === 0 && <div className="notes-text" style={{ marginTop: 0 }}>No comments yet.</div>}
       {sorted.map((c) => {
         const browserId = typeof window !== "undefined" ? getBrowserId() : null;
-        const upvoted = browserId && (c.upvoted_by || []).includes(browserId);
+        const isMine = browserId && c.browser_id === browserId;
         return (
           <div key={c.id} className="comment-item">
-            <button className={`upvote-btn ${upvoted ? "upvoted" : ""}`} onClick={() => toggleUpvote(c)}>
-              ▲ {(c.upvoted_by || []).length}
-            </button>
             <div style={{ flex: 1 }}>
               <span className="comment-user">{c.username}</span>
               <p className="comment-text">{c.text}</p>
             </div>
-            {isOwner && (
-              <button className="btn-ghost" onClick={() => deleteComment(c.id)}>Delete</button>
+            {isMine && (
+              <button className="btn-ghost" onClick={() => deleteOwnComment(c.id)} aria-label="Delete your comment">✕</button>
+            )}
+            {isOwner && !isMine && (
+              <button className="btn-ghost" onClick={() => deleteAsOwner(c.id)}>Delete</button>
             )}
           </div>
         );
       })}
 
       <div style={{ marginTop: 14 }}>
-        <input
-          placeholder="Your name"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          style={{ marginBottom: 8, width: "100%" }}
-          maxLength={20}
-        />
+        {!displayName && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input
+              placeholder="Pick a display name"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              maxLength={20}
+              style={{ flex: 1 }}
+            />
+            <button className="btn-primary" onClick={saveName} disabled={!nameInput.trim()}>Set Name</button>
+          </div>
+        )}
         <div className="comment-form-row">
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={cooldownActive ? `You can comment again in ${cooldownMinsLeft} min` : "Add a comment…"}
-            disabled={cooldownActive}
+            disabled={cooldownActive || !displayName}
           />
-          <button className="btn-primary" onClick={postComment} disabled={!draft.trim() || !displayName.trim() || cooldownActive}>
+          <button className="btn-primary" onClick={postComment} disabled={!draft.trim() || !displayName || cooldownActive}>
             {cooldownActive ? `Wait ${cooldownMinsLeft}m` : "Post"}
           </button>
         </div>
