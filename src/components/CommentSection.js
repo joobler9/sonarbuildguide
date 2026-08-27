@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useOwnerMode } from "@/lib/ownerMode";
 
-const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 // Generates (once) and remembers a random id for this browser, used only
 // to know which comments THIS browser posted, so it can offer a delete
