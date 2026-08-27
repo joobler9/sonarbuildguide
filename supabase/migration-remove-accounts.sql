@@ -7,19 +7,20 @@
 -- Remove follows entirely.
 drop table if exists follows cascade;
 
+-- Drop every existing RLS policy on these tables so we can replace them
+-- cleanly with the new, accounts-free rules below. This has to happen
+-- BEFORE touching user_id, since two of these policies depend on it.
+drop policy if exists "Comments are viewable by everyone" on comments;
+drop policy if exists "Logged in users can post comments" on comments;
+drop policy if exists "Users can update their own comment (for upvotes on any comment)" on comments;
+drop policy if exists "Authors and moderators can delete comments" on comments;
+
 -- Comments no longer need a real logged-in account. Replace the user_id
 -- link with a plain typed display name, and switch upvotes to track a
 -- random per-browser id instead of a real user id.
 alter table comments drop column if exists user_id;
 alter table comments add column if not exists username text not null default 'Anonymous';
 alter table comments alter column username drop default;
-
--- Drop every existing RLS policy on these tables so we can replace them
--- cleanly with the new, accounts-free rules below.
-drop policy if exists "Comments are viewable by everyone" on comments;
-drop policy if exists "Logged in users can post comments" on comments;
-drop policy if exists "Users can update their own comment (for upvotes on any comment)" on comments;
-drop policy if exists "Authors and moderators can delete comments" on comments;
 
 create policy "Comments are viewable by everyone"
   on comments for select
