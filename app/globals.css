@@ -237,3 +237,10 @@ input:focus, select:focus, textarea:focus {
 .upvote-btn:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); }
 .upvote-btn.upvoted { border-color: var(--cyan); color: var(--cyan); background: color-mix(in srgb, var(--cyan) 15%, transparent); }
 .upvote-btn:disabled { opacity: 0.5; }
+
+
+/* Owner unlock prompt */
+.profile-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 90; }
+.profile-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; width: min(360px, calc(100vw - 32px)); padding: 22px; background: var(--panel); border: 1.5px solid var(--gold); border-radius: 16px; box-shadow: 0 0 40px color-mix(in srgb, var(--gold) 25%, transparent); }
+.profile-panel input { width: 100%; box-sizing: border-box; }
+.logo-orb { cursor: default; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }

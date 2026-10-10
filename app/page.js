@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import CreaturesBrowser from "@/components/CreaturesBrowser";
 import PlushiesTab from "@/components/PlushiesTab";
 import TraitsTab from "@/components/TraitsTab";
@@ -10,13 +10,26 @@ import { useOwnerMode } from "@/lib/ownerMode";
 export default function HomePage() {
   const { isOwner } = useOwnerMode();
   const [tab, setTab] = useState("builds"); // "builds" | "traits" | "plushies"
+  const tapCount = useRef(0);
+  const tapTimer = useRef(null);
+
+  // Phone-friendly way into owner mode: tap the logo 5 times quickly.
+  function handleLogoTap() {
+    tapCount.current += 1;
+    clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
+    if (tapCount.current >= 5) {
+      tapCount.current = 0;
+      window.dispatchEvent(new Event("open-owner-unlock"));
+    }
+  }
 
   return (
     <div className="page-wrap">
       <header className="site-header">
         <div className="header-spacer" />
         <div className="site-title-row">
-          <div className="logo-orb">JB</div>
+          <div className="logo-orb" onClick={handleLogoTap}>JB</div>
           <div>
             <h1 className="site-title">Joobs Build Guides</h1>
             <p className="site-subtitle">Unofficial fan tool for builds, traits, and plushies.</p>

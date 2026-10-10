@@ -14,8 +14,15 @@ export default function OwnerUnlock() {
         setShowPrompt(true);
       }
     }
+    function handleOpenEvent() {
+      setShowPrompt(true);
+    }
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-owner-unlock", handleOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-owner-unlock", handleOpenEvent);
+    };
   }, []);
 
   if (!showPrompt) return null;
