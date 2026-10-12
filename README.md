@@ -17,6 +17,12 @@ creatures and 85 plushies are completely untouched by this.
 blocks anyone who guesses the wrong passcode 5 times in a row for a
 while, so the passcode can't just be brute-forced.
 
+**1c. Run the traits migration.** Also paste in and run
+`supabase/migration-traits.sql`. This moves the traits into the database
+(with the 8 current ones already filled in) so you can edit them from the
+site. Until you run it, the Traits tab still shows the built-in list but
+editing it will say the table doesn't exist yet.
+
 **2. Set your passcode.** In Vercel → Settings → Environment Variables,
 add a new one:
 ```

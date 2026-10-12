@@ -14,6 +14,7 @@ export default function PlushiesTab() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   async function loadPlushies() {
     setLoading(true);
@@ -49,7 +50,11 @@ export default function PlushiesTab() {
       </div>
 
       {isOwner && showAddForm && (
-        <AddPlushieForm passcode={passcode} onAdded={() => { setShowAddForm(false); loadPlushies(); }} />
+        <PlushieForm
+          passcode={passcode}
+          onDone={() => { setShowAddForm(false); loadPlushies(); }}
+          onCancel={() => setShowAddForm(false)}
+        />
       )}
 
       {loading ? (
@@ -68,52 +73,77 @@ export default function PlushiesTab() {
         <div className="notes-text">No plushies match that search.</div>
       ) : (
         <div className="grid-cards">
-          {filtered.map((p) => (
-            <div key={p.id} className="info-card">
-              <div className="info-card-top">
-                <h3 className="info-name">{p.name}</h3>
-                <span className="tag-pill">{p.type}</span>
+          {filtered.map((p) =>
+            isOwner && editingId === p.id ? (
+              <div key={p.id} style={{ gridColumn: "1 / -1" }}>
+                <PlushieForm
+                  plushie={p}
+                  passcode={passcode}
+                  onDone={() => { setEditingId(null); loadPlushies(); }}
+                  onCancel={() => setEditingId(null)}
+                />
               </div>
-              <p className="notes-text" style={{ marginTop: 0 }}>{p.effect}</p>
-              <div className="section-label" style={{ margin: "8px 0 2px" }}>Availability</div>
-              <div style={{ fontSize: 12.5, color: "var(--ink-dim)" }}>{p.availability}</div>
-            </div>
-          ))}
+            ) : (
+              <div key={p.id} className="info-card">
+                <div className="info-card-top">
+                  <h3 className="info-name">{p.name}</h3>
+                  <span className="tag-pill">{p.type}</span>
+                </div>
+                <p className="notes-text" style={{ marginTop: 0 }}>{p.effect}</p>
+                <div className="section-label" style={{ margin: "8px 0 2px" }}>Availability</div>
+                <div style={{ fontSize: 12.5, color: "var(--ink-dim)" }}>{p.availability}</div>
+                {isOwner && (
+                  <button className="btn-ghost" style={{ marginTop: 8 }} onClick={() => setEditingId(p.id)}>Edit</button>
+                )}
+              </div>
+            )
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function AddPlushieForm({ passcode, onAdded }) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState(PLUSHIE_TYPES[0]);
-  const [effect, setEffect] = useState("");
-  const [availability, setAvailability] = useState("");
+// Used for both adding a new plushie and editing an existing one.
+function PlushieForm({ plushie, passcode, onDone, onCancel }) {
+  const [name, setName] = useState(plushie ? plushie.name : "");
+  const [type, setType] = useState(plushie ? plushie.type : PLUSHIE_TYPES[0]);
+  const [effect, setEffect] = useState(plushie ? plushie.effect : "");
+  const [availability, setAvailability] = useState(plushie ? plushie.availability : "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   async function submit() {
-    if (!name.trim() || !effect.trim() || !availability.trim()) return;
+    if (!name.trim() || !effect.trim() || !availability.trim()) {
+      setError("Name, effect, and availability are required.");
+      return;
+    }
     setSaving(true);
     setError(null);
     const res = await fetch("/api/plushies", {
-      method: "POST",
+      method: plushie ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ passcode, name: name.trim(), type, effect: effect.trim(), availability: availability.trim() }),
+      body: JSON.stringify({
+        passcode,
+        id: plushie ? plushie.id : undefined,
+        name: name.trim(),
+        type,
+        effect: effect.trim(),
+        availability: availability.trim(),
+      }),
     });
     setSaving(false);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setError(body.error || "Failed to add plushie.");
+      setError(body.error || "Save failed.");
     } else {
-      onAdded();
+      onDone();
     }
   }
 
   return (
     <div className="mod-form">
-      <div className="mod-form-label">Add a New Plushie</div>
+      <div className="mod-form-label">{plushie ? `Edit ${plushie.name}` : "Add a New Plushie"}</div>
       <div className="mod-form-grid">
         <input placeholder="Plushie name" value={name} onChange={(e) => setName(e.target.value)} />
         <select value={type} onChange={(e) => setType(e.target.value)}>
@@ -123,9 +153,10 @@ function AddPlushieForm({ passcode, onAdded }) {
         <input className="field-full" placeholder="Availability (e.g. Halloween Event)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
       </div>
       {error && <div className="error-text">{error}</div>}
-      <button className="btn-gold" style={{ marginTop: 10 }} onClick={submit} disabled={saving}>
-        {saving ? "Adding…" : "Add Plushie"}
-      </button>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button className="btn-gold" onClick={submit} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
+        <button className="btn-ghost" onClick={onCancel}>Cancel</button>
+      </div>
     </div>
   );
 }

@@ -13,9 +13,22 @@ const OwnerModeContext = createContext(null);
 export function OwnerModeProvider({ children }) {
   const [passcode, setPasscodeState] = useState("");
 
+  // A passcode remembered from an earlier visit is re-checked with the
+  // server before it counts. If it's wrong (or was never right), it's
+  // cleared instead of leaving the browser stuck in a fake owner mode.
   useEffect(() => {
     const saved = window.localStorage.getItem("ownerPasscode");
-    if (saved) setPasscodeState(saved);
+    if (!saved) return;
+    fetch("/api/verify-passcode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode: saved }),
+    })
+      .then((res) => {
+        if (res.ok) setPasscodeState(saved);
+        else if (res.status === 401) window.localStorage.removeItem("ownerPasscode");
+      })
+      .catch(() => {});
   }, []);
 
   function setPasscode(value) {

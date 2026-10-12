@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useOwnerMode } from "@/lib/ownerMode";
+import { useTraits } from "@/lib/useTraits";
 
-const TRAIT_NAMES = ["Bite", "Damage", "Weight", "Health", "Stamina Regen", "Healing", "Speed", "Max Stamina"];
 const ELDER_TYPES = ["Powerful", "Gentle", "Devious"];
 
 export default function BuildEditor({ creature, onSaved }) {
   const { isOwner, passcode } = useOwnerMode();
   const supabase = createClient();
+  const { traits } = useTraits();
+  const traitNames = traits.map((t) => t.name);
   const [bestTraits, setBestTraits] = useState(creature.best_traits || []);
   const [selectedPlushies, setSelectedPlushies] = useState(creature.recommended_plushies || []);
   const [plushiesList, setPlushiesList] = useState([]);
@@ -32,8 +34,15 @@ export default function BuildEditor({ creature, onSaved }) {
     setBestTraits((prev) => (prev.includes(name) ? prev.filter((t) => t !== name) : prev.length >= 2 ? prev : [...prev, name]));
   }
 
-  function togglePlushie(name) {
-    setSelectedPlushies((prev) => (prev.includes(name) ? prev.filter((p) => p !== name) : prev.length >= 2 ? prev : [...prev, name]));
+  // Adding always works (up to 2), so the same plushie can be picked twice.
+  function addPlushie(name) {
+    setSelectedPlushies((prev) => (prev.length >= 2 ? prev : [...prev, name]));
+  }
+
+  // Removes just the one at this position, so removing one of two
+  // identical plushies leaves the other.
+  function removePlushieAt(index) {
+    setSelectedPlushies((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function save() {
@@ -68,7 +77,7 @@ export default function BuildEditor({ creature, onSaved }) {
 
       <div className="picker-section-label">Best Traits ({bestTraits.length}/2)</div>
       <div className="chip-picker">
-        {TRAIT_NAMES.map((t) => (
+        {traitNames.map((t) => (
           <button
             key={t}
             type="button"
@@ -84,8 +93,8 @@ export default function BuildEditor({ creature, onSaved }) {
       <div className="picker-section-label">Recommended Plushies ({selectedPlushies.length}/2)</div>
       {selectedPlushies.length > 0 && (
         <div className="chip-picker" style={{ marginBottom: 8 }}>
-          {selectedPlushies.map((p) => (
-            <button key={p} type="button" className="chip-toggle active" onClick={() => togglePlushie(p)}>
+          {selectedPlushies.map((p, i) => (
+            <button key={`${p}-${i}`} type="button" className="chip-toggle active" onClick={() => removePlushieAt(i)}>
               {p} ✕
             </button>
           ))}
@@ -98,12 +107,12 @@ export default function BuildEditor({ creature, onSaved }) {
         style={{ marginBottom: 6, width: "100%" }}
       />
       <div className="chip-picker-scroll">
-        {filteredPlushies.filter((p) => !selectedPlushies.includes(p)).map((p) => (
+        {filteredPlushies.map((p) => (
           <button
             key={p}
             type="button"
             className="chip-toggle"
-            onClick={() => togglePlushie(p)}
+            onClick={() => addPlushie(p)}
             disabled={selectedPlushies.length >= 2}
           >
             {p}
