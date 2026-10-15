@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useOwnerMode } from "@/lib/ownerMode";
 import { useTraits } from "@/lib/useTraits";
+import TagPicker from "./TagPicker";
 
 const CATEGORIES = ["Land", "Sea", "Sky"];
 const ELDER_TYPES = ["Powerful", "Gentle", "Devious"];
@@ -22,6 +23,7 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
   const [form, setForm] = useState(BLANK_FORM);
   const [bestTraits, setBestTraits] = useState([]);
   const [selectedPlushies, setSelectedPlushies] = useState([]);
+  const [tags, setTags] = useState([]);
   const [plushiesList, setPlushiesList] = useState([]);
   const [plushieSearch, setPlushieSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -77,6 +79,7 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
         bestTraits,
         recommendedPlushies: selectedPlushies,
         notes: form.notes.trim(),
+        tags,
       }),
     });
     setSaving(false);
@@ -87,6 +90,7 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
       setForm(BLANK_FORM);
       setBestTraits([]);
       setSelectedPlushies([]);
+      setTags([]);
       if (onAdded) onAdded();
     }
   }
@@ -162,6 +166,8 @@ export default function AddCreatureForm({ onAdded, onCancel }) {
           </button>
         ))}
       </div>
+
+      <TagPicker tags={tags} onChange={setTags} />
 
       {error && <div className="error-text">{error}</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>

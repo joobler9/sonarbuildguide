@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { isRateLimited, recordFailedAttempt, getClientIp } from "@/lib/rateLimiter";
+import { cleanTags } from "@/lib/tags";
+
+// Clear message if the tags column hasn't been added to the database yet.
+function friendlyError(error) {
+  if (/tags/i.test(error.message) && /(does not exist|schema cache|could not find)/i.test(error.message)) {
+    return "The tags column doesn't exist yet. Run migration-tags.sql in Supabase first.";
+  }
+  return error.message;
+}
 
 // Verifies the passcode ON THE SERVER before touching the database at all.
 // The real database credentials (service role key) never leave this file,
@@ -40,9 +49,10 @@ export async function POST(request) {
     best_traits: body.bestTraits,
     recommended_plushies: body.recommendedPlushies,
     notes: body.notes,
+    tags: cleanTags(body.tags),
   });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: friendlyError(error) }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 
@@ -60,10 +70,11 @@ export async function PATCH(request) {
       recommended_plushies: body.recommendedPlushies,
       elder: body.elder,
       notes: body.notes,
+      tags: cleanTags(body.tags),
       updated_at: new Date().toISOString(),
     })
     .eq("id", body.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: friendlyError(error) }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

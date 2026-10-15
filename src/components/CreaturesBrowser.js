@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { useOwnerMode } from "@/lib/ownerMode";
 import { useTraits } from "@/lib/useTraits";
 import { TRAIT_ICON } from "@/lib/traitsData";
+import { tagClass } from "@/lib/tags";
 import AddCreatureForm from "./AddCreatureForm";
 import BuildEditor from "./BuildEditor";
 import CommentSection from "./CommentSection";
@@ -51,7 +52,10 @@ export default function CreaturesBrowser() {
   const filtered = creatures
     .filter((c) => (category === "All" ? true : c.category === category))
     .filter((c) => (tier === "All" ? true : c.tier === tier))
-    .filter((c) => c.name.toLowerCase().includes(query.toLowerCase()));
+    .filter((c) => {
+      const q = query.toLowerCase();
+      return c.name.toLowerCase().includes(q) || (c.tags || []).some((t) => t.toLowerCase().includes(q));
+    });
   const selected = creatures.find((c) => c.id === selectedId);
 
   if (loading) return <div className="notes-text">Loading creatures…</div>;
@@ -120,6 +124,11 @@ export default function CreaturesBrowser() {
             >
               <div className="creature-item-name">{c.name}</div>
               <div className="creature-item-flavor">{c.flavor}</div>
+              {(c.tags || []).length > 0 && (
+                <div className="build-tag-row">
+                  {c.tags.map((t) => <span key={t} className={`build-tag ${tagClass(t)}`}>{t}</span>)}
+                </div>
+              )}
             </div>
           ))}
           {filtered.length === 0 && <div className="notes-text">No creatures match that filter.</div>}
@@ -149,6 +158,11 @@ export default function CreaturesBrowser() {
                   <h2 className="creature-name">{selected.name}</h2>
                   <p className="creature-flavor">{selected.flavor}</p>
                   <span className="tag-pill" style={{ marginTop: 6, display: "inline-block" }}>{selected.elder} Elder</span>
+                  {(selected.tags || []).length > 0 && (
+                    <div className="build-tag-row" style={{ marginTop: 8 }}>
+                      {selected.tags.map((t) => <span key={t} className={`build-tag ${tagClass(t)}`}>{t}</span>)}
+                    </div>
+                  )}
                 </div>
               </div>
               {isOwner && (

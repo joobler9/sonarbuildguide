@@ -23,6 +23,10 @@ while, so the passcode can't just be brute-forced.
 site. Until you run it, the Traits tab still shows the built-in list but
 editing it will say the table doesn't exist yet.
 
+**1d. Run the tags migration.** Also paste in and run
+`supabase/migration-tags.sql`. This adds the column that stores build tags
+(META, UNDERRATED, or your own). Run it before saving tags on a build.
+
 **2. Set your passcode.** In Vercel → Settings → Environment Variables,
 add a new one:
 ```

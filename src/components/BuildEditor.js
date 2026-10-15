@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useOwnerMode } from "@/lib/ownerMode";
 import { useTraits } from "@/lib/useTraits";
+import TagPicker from "./TagPicker";
 
 const ELDER_TYPES = ["Powerful", "Gentle", "Devious"];
 
@@ -17,6 +18,7 @@ export default function BuildEditor({ creature, onSaved }) {
   const [plushiesList, setPlushiesList] = useState([]);
   const [elder, setElder] = useState(creature.elder || "");
   const [notes, setNotes] = useState(creature.notes || "");
+  const [tags, setTags] = useState(creature.tags || []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [plushieSearch, setPlushieSearch] = useState("");
@@ -58,6 +60,7 @@ export default function BuildEditor({ creature, onSaved }) {
         recommendedPlushies: selectedPlushies,
         elder,
         notes,
+        tags,
       }),
     });
     setSaving(false);
@@ -119,6 +122,8 @@ export default function BuildEditor({ creature, onSaved }) {
           </button>
         ))}
       </div>
+
+      <TagPicker tags={tags} onChange={setTags} />
 
       <div className="picker-section-label">Elder Type</div>
       <select value={elder} onChange={(e) => setElder(e.target.value)} style={{ width: "100%", marginBottom: 10 }}>

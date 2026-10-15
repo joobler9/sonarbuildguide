@@ -253,3 +253,14 @@ input:focus, select:focus, textarea:focus {
   .build-detail.mobile-open { display: block; position: fixed; inset: 0; z-index: 80; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 12px 24px; }
   .build-close { display: block; position: sticky; top: 0; z-index: 2; width: 100%; margin: 0 0 12px; padding: 14px; background: var(--bg); border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 700; font-size: 15px; text-align: left; cursor: pointer; }
 }
+
+
+/* Build tags (META, UNDERRATED, custom) */
+.build-tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.build-tag { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-dim); cursor: default; }
+button.build-tag { cursor: pointer; }
+.build-tag.tag-meta { color: var(--gold); border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--panel)); }
+.build-tag.tag-underrated { color: var(--cyan); border-color: var(--cyan); background: color-mix(in srgb, var(--cyan) 14%, var(--panel)); }
+.build-tag.tag-custom { color: var(--purple); border-color: var(--purple); background: color-mix(in srgb, var(--purple) 14%, var(--panel)); }
+.creature-item .build-tag-row { margin-top: 5px; }
+.creature-item .build-tag { font-size: 9px; padding: 2px 7px; }
