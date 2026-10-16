@@ -12,3 +12,6 @@ drop policy if exists "Anyone can delete a comment" on comments;
 create policy "Anyone can delete a comment"
   on comments for delete
   using (true);
+
+-- Makes Supabase notice the new column right away.
+notify pgrst, 'reload schema';

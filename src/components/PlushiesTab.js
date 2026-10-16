@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useOwnerMode } from "@/lib/ownerMode";
+import { groupPlushies } from "@/lib/groupPlushies";
 
 const PLUSHIE_TYPES = ["Boost", "Ailments", "Ability Grant", "Mutation Chance"];
 
@@ -15,6 +16,7 @@ export default function PlushiesTab() {
   const [query, setQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [collapsed, setCollapsed] = useState({});
 
   async function loadPlushies() {
     setLoading(true);
@@ -34,7 +36,22 @@ export default function PlushiesTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filtered = plushies.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+  // Sections come from the FULL list, so a search never moves a plushie
+  // between sections. The search then just hides non-matches.
+  const sections = useMemo(() => groupPlushies(plushies), [plushies]);
+  const availabilityOptions = useMemo(
+    () => Array.from(new Set(plushies.map((p) => p.availability))).sort(),
+    [plushies]
+  );
+
+  const q = query.trim().toLowerCase();
+  const visibleSections = sections
+    .map((s) => ({
+      ...s,
+      items: q ? s.items.filter((p) => p.name.toLowerCase().includes(q)) : s.items,
+    }))
+    .filter((s) => s.items.length > 0);
+  const matchCount = visibleSections.reduce((n, s) => n + s.items.length, 0);
 
   return (
     <div>
@@ -52,6 +69,7 @@ export default function PlushiesTab() {
       {isOwner && showAddForm && (
         <PlushieForm
           passcode={passcode}
+          availabilityOptions={availabilityOptions}
           onDone={() => { setShowAddForm(false); loadPlushies(); }}
           onCancel={() => setShowAddForm(false)}
         />
@@ -69,43 +87,63 @@ export default function PlushiesTab() {
           No plushies found in the database yet. Run <code>npm run seed:plushies</code> against this Supabase
           project if you haven't already.
         </div>
-      ) : filtered.length === 0 ? (
+      ) : matchCount === 0 ? (
         <div className="notes-text">No plushies match that search.</div>
       ) : (
-        <div className="grid-cards">
-          {filtered.map((p) =>
-            isOwner && editingId === p.id ? (
-              <div key={p.id} style={{ gridColumn: "1 / -1" }}>
-                <PlushieForm
-                  plushie={p}
-                  passcode={passcode}
-                  onDone={() => { setEditingId(null); loadPlushies(); }}
-                  onCancel={() => setEditingId(null)}
-                />
-              </div>
-            ) : (
-              <div key={p.id} className="info-card">
-                <div className="info-card-top">
-                  <h3 className="info-name">{p.name}</h3>
-                  <span className="tag-pill">{p.type}</span>
+        visibleSections.map((section) => {
+          // While searching, every section with a match stays open.
+          const isCollapsed = !q && collapsed[section.name];
+          return (
+            <div key={section.name} className="plushie-section">
+              <button
+                className="plushie-section-head"
+                onClick={() => setCollapsed((c) => ({ ...c, [section.name]: !c[section.name] }))}
+                aria-expanded={!isCollapsed}
+              >
+                <span className="chev">{isCollapsed ? "▸" : "▾"}</span>
+                <span>{section.name}</span>
+                <span className="count">{section.items.length}</span>
+              </button>
+
+              {!isCollapsed && (
+                <div className="plushie-grid">
+                  {section.items.map((p) =>
+                    isOwner && editingId === p.id ? (
+                      <div key={p.id} style={{ gridColumn: "1 / -1" }}>
+                        <PlushieForm
+                          plushie={p}
+                          passcode={passcode}
+                          availabilityOptions={availabilityOptions}
+                          onDone={() => { setEditingId(null); loadPlushies(); }}
+                          onCancel={() => setEditingId(null)}
+                        />
+                      </div>
+                    ) : (
+                      <div key={p.id} className="plushie-card">
+                        <div className="plushie-card-top">
+                          <h3 className="plushie-name">{p.name}</h3>
+                          <span className="plushie-type">{p.type}</span>
+                        </div>
+                        <p className="plushie-effect">{p.effect}</p>
+                        {p._detail && <div className="plushie-detail">{p._detail}</div>}
+                        {isOwner && (
+                          <button className="btn-ghost plushie-edit" onClick={() => setEditingId(p.id)}>Edit</button>
+                        )}
+                      </div>
+                    )
+                  )}
                 </div>
-                <p className="notes-text" style={{ marginTop: 0 }}>{p.effect}</p>
-                <div className="section-label" style={{ margin: "8px 0 2px" }}>Availability</div>
-                <div style={{ fontSize: 12.5, color: "var(--ink-dim)" }}>{p.availability}</div>
-                {isOwner && (
-                  <button className="btn-ghost" style={{ marginTop: 8 }} onClick={() => setEditingId(p.id)}>Edit</button>
-                )}
-              </div>
-            )
-          )}
-        </div>
+              )}
+            </div>
+          );
+        })
       )}
     </div>
   );
 }
 
 // Used for both adding a new plushie and editing an existing one.
-function PlushieForm({ plushie, passcode, onDone, onCancel }) {
+function PlushieForm({ plushie, passcode, availabilityOptions = [], onDone, onCancel }) {
   const [name, setName] = useState(plushie ? plushie.name : "");
   const [type, setType] = useState(plushie ? plushie.type : PLUSHIE_TYPES[0]);
   const [effect, setEffect] = useState(plushie ? plushie.effect : "");
@@ -150,7 +188,16 @@ function PlushieForm({ plushie, passcode, onDone, onCancel }) {
           {PLUSHIE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <input className="field-full" placeholder="Effect (e.g. +5% damage. Stackable.)" value={effect} onChange={(e) => setEffect(e.target.value)} />
-        <input className="field-full" placeholder="Availability (e.g. Halloween Event)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
+        <input
+          className="field-full"
+          list="plushie-availability-options"
+          placeholder="Where it comes from (pick one that exists, or type a new one)"
+          value={availability}
+          onChange={(e) => setAvailability(e.target.value)}
+        />
+        <datalist id="plushie-availability-options">
+          {availabilityOptions.map((a) => <option key={a} value={a} />)}
+        </datalist>
       </div>
       {error && <div className="error-text">{error}</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
