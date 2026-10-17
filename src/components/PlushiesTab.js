@@ -16,7 +16,8 @@ export default function PlushiesTab() {
   const [query, setQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [collapsed, setCollapsed] = useState({});
+  // Sections start closed; this remembers which ones you've opened.
+  const [openSections, setOpenSections] = useState({});
 
   async function loadPlushies() {
     setLoading(true);
@@ -91,21 +92,21 @@ export default function PlushiesTab() {
         <div className="notes-text">No plushies match that search.</div>
       ) : (
         visibleSections.map((section) => {
-          // While searching, every section with a match stays open.
-          const isCollapsed = !q && collapsed[section.name];
+          // While searching, every section with a match is shown open.
+          const isOpen = q ? true : !!openSections[section.name];
           return (
             <div key={section.name} className="plushie-section">
               <button
                 className="plushie-section-head"
-                onClick={() => setCollapsed((c) => ({ ...c, [section.name]: !c[section.name] }))}
-                aria-expanded={!isCollapsed}
+                onClick={() => setOpenSections((o) => ({ ...o, [section.name]: !o[section.name] }))}
+                aria-expanded={isOpen}
               >
-                <span className="chev">{isCollapsed ? "▸" : "▾"}</span>
+                <span className="chev">{isOpen ? "▾" : "▸"}</span>
                 <span>{section.name}</span>
                 <span className="count">{section.items.length}</span>
               </button>
 
-              {!isCollapsed && (
+              {isOpen && (
                 <div className="plushie-grid">
                   {section.items.map((p) =>
                     isOwner && editingId === p.id ? (
